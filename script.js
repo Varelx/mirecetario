@@ -1,3 +1,6 @@
+// PEGA AQUÍ TU URL DE SHEETDB
+const API_URL = 'https://sheetdb.io/api/v1/d1zt4e9rosgot';
+
 const formContainer = document.getElementById('form-container');
 const toggleFormBtn = document.getElementById('toggle-form-btn');
 const cancelBtn = document.getElementById('cancel-btn');
@@ -7,7 +10,7 @@ const recipeModal = document.getElementById('recipe-modal');
 const modalClose = document.getElementById('modal-close');
 const modalBody = document.getElementById('modal-body');
 
-let recipes = JSON.parse(localStorage.getItem('recipes')) || [];
+let recipes = [];
 
 // Mostrar/Ocultar formulario
 function toggleForm(show) {
@@ -24,12 +27,24 @@ function toggleForm(show) {
 toggleFormBtn.addEventListener('click', () => toggleForm(true));
 cancelBtn.addEventListener('click', () => toggleForm(false));
 
-// Guardar receta
-recipeForm.addEventListener('submit', (e) => {
+// Cargar recetas desde Google Sheets al abrir la web
+async function fetchRecipes() {
+    try {
+        const response = await fetch(API_URL);
+        recipes = await response.json();
+        renderRecipes();
+    } catch (error) {
+        console.error('Error al cargar las recetas:', error);
+        recipesGrid.innerHTML = `<div class="empty-state"><p>Error al conectar con la nube.</p></div>`;
+    }
+}
+
+// Guardar receta en Google Sheets
+recipeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const newRecipe = {
-        id: Date.now(),
+        id: String(Date.now()),
         title: document.getElementById('title').value,
         image: document.getElementById('image').value,
         servings: document.getElementById('servings').value,
@@ -37,21 +52,31 @@ recipeForm.addEventListener('submit', (e) => {
         instructions: document.getElementById('instructions').value
     };
 
-    recipes.unshift(newRecipe);
-    syncStorage();
-    toggleForm(false);
-    renderRecipes();
-});
+    try {
+        // Enviar a SheetDB
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ data: [newRecipe] })
+        });
 
-function syncStorage() {
-    localStorage.setItem('recipes', JSON.stringify(recipes));
-}
+        recipes.unshift(newRecipe);
+        toggleForm(false);
+        renderRecipes();
+    } catch (error) {
+        alert('Error al guardar la receta en la nube.');
+        console.error(error);
+    }
+});
 
 // Renderizar tarjetas
 function renderRecipes() {
     recipesGrid.innerHTML = '';
 
-    if (recipes.length === 0) {
+    if (!recipes || recipes.length === 0) {
         recipesGrid.innerHTML = `
             <div class="empty-state">
                 <p>No tienes ninguna receta guardada.</p>
@@ -93,7 +118,7 @@ function openModal(recipe) {
         <div class="modal-text">${recipe.instructions}</div>
 
         <div class="modal-footer">
-            <button class="btn btn-danger" onclick="deleteRecipe(${recipe.id})">Eliminar receta</button>
+            <button class="btn btn-danger" onclick="deleteRecipe('${recipe.id}')">Eliminar receta</button>
         </div>
     `;
     recipeModal.classList.add('active');
@@ -108,15 +133,23 @@ recipeModal.addEventListener('click', (e) => {
     if (e.target === recipeModal) closeModal();
 });
 
-// Eliminar receta
-function deleteRecipe(id) {
+// Eliminar receta de Google Sheets
+async function deleteRecipe(id) {
     if (confirm('¿Estás seguro de que quieres eliminar esta receta?')) {
-        recipes = recipes.filter(r => r.id !== id);
-        syncStorage();
-        closeModal();
-        renderRecipes();
+        try {
+            await fetch(`${API_URL}/id/${id}`, {
+                method: 'DELETE'
+            });
+
+            recipes = recipes.filter(r => r.id !== id);
+            closeModal();
+            renderRecipes();
+        } catch (error) {
+            alert('Error al eliminar la receta.');
+            console.error(error);
+        }
     }
 }
 
-// Inicializar
-renderRecipes();
+// Inicializar cargando desde la nube
+fetchRecipes();
