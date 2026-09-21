@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Recetario</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-8a4 4 0 0 0-4 4v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a4 4 0 0 0-4-4Z"></path><path d="M12 11h4"></path><path d="M12 15h4"></path><path d="M8 11h.01"></path><path d="M8 15h.01"></path></svg>
+                <h1>Recetas</h1>
+            </div>
+            <button class="btn btn-primary" id="toggle-form-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                Nueva receta
+            </button>
+        </header>
+
+        <!-- Formulario flotante / desplegable -->
+        <div class="form-wrapper" id="form-container">
+            <form id="recipe-form" class="recipe-form">
+                <h2>Añadir nueva receta</h2>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="title">Título</label>
+                        <input type="text" id="title" required placeholder="Ej. Tarta de queso">
+                    </div>
+                    <div class="field">
+                        <label for="image">Foto (URL)</label>
+                        <input type="url" id="image" required placeholder="https://ejemplo.com/foto.jpg">
+                    </div>
+                    <div class="field full">
+                        <label for="servings">Comensales (Personas)</label>
+                        <input type="number" id="servings" min="1" required placeholder="Ej. 4">
+                    </div>
+                    <div class="field full">
+                        <label for="ingredients">Ingredientes (uno por línea)</label>
+                        <textarea id="ingredients" required placeholder="- 200g de queso crema&#10;- 3 huevos&#10;- 100g de azúcar"></textarea>
+                    </div>
+                    <div class="field full">
+                        <label for="instructions">Preparación</label>
+                        <textarea id="instructions" required placeholder="1. Precalentar el horno a 180ºC..."></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secundary" id="cancel-btn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar receta</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Cuadrícula de recetas -->
+        <main class="recipes-grid" id="recipes-grid">
+            <!-- Inyectado por JS -->
+        </main>
+    </div>
+
+    <!-- Modal de detalle -->
+    <div class="modal-backdrop" id="recipe-modal">
+        <div class="modal-card">
+            <button class="modal-close" id="modal-close">&times;</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
