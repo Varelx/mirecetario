@@ -28,13 +28,15 @@ cancelBtn.addEventListener('click', () => toggleForm(false));
 
 // Cargar recetas desde Google Sheets
 async function fetchRecipes() {
+    console.log("Cargando recetas...");
     try {
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error('Error al conectar con la API');
         recipes = await response.json();
+        console.log("Recetas cargadas:", recipes);
         renderRecipes();
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error al cargar:', error);
         recipesGrid.innerHTML = `<div class="empty-state"><p>No se pudieron cargar las recetas desde la nube.</p></div>`;
     }
 }
@@ -42,6 +44,12 @@ async function fetchRecipes() {
 // Guardar receta en Google Sheets
 recipeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log("Formulario enviado, procesando...");
+
+    const submitBtn = recipeForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Guardando en la nube...';
+    submitBtn.disabled = true;
     
     const newRecipe = {
         id: String(Date.now()),
@@ -59,8 +67,10 @@ recipeForm.addEventListener('submit', async (e) => {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(newRecipe) // Enviamos el objeto plano directamente
+            body: JSON.stringify(newRecipe)
         });
+
+        console.log("Respuesta del servidor:", response.status);
 
         if (!response.ok) {
             const errData = await response.text();
@@ -71,8 +81,11 @@ recipeForm.addEventListener('submit', async (e) => {
         toggleForm(false);
         renderRecipes();
     } catch (error) {
-        alert('Error al guardar la receta. Revisa la consola para más detalles.');
+        alert('Error al guardar. Revisa la consola.');
         console.error('Detalle del error:', error);
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
     }
 });
 
