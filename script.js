@@ -1,4 +1,3 @@
-// PEGA AQUÍ TU URL DE SHEETDB
 const API_URL = 'https://sheetdb.io/api/v1/d1zt4e9rosgot';
 
 const formContainer = document.getElementById('form-container');
@@ -58,7 +57,6 @@ recipeForm.addEventListener('submit', async (e) => {
     };
 
     try {
-        // SheetDB exige la propiedad 'data' envuelta en un array
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -127,10 +125,6 @@ function openModal(recipe) {
         
         <h4 class="modal-section-title">Preparación</h4>
         <div class="modal-text">${recipe.instructions}</div>
-
-        <div class="modal-footer">
-            <button class="btn btn-danger" onclick="deleteRecipe('${recipe.id}')">Eliminar receta</button>
-        </div>
     `;
     recipeModal.classList.add('active');
 }
@@ -143,24 +137,5 @@ modalClose.addEventListener('click', closeModal);
 recipeModal.addEventListener('click', (e) => {
     if (e.target === recipeModal) closeModal();
 });
-
-async function deleteRecipe(id) {
-    if (confirm('¿Estás seguro de que quieres eliminar esta receta?')) {
-        try {
-            const response = await fetch(`${API_URL}/id/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) throw new Error('No se pudo eliminar');
-
-            recipes = recipes.filter(r => r.id !== id);
-            closeModal();
-            renderRecipes();
-        } catch (error) {
-            console.error('Error al eliminar:', error);
-            alert('Error al eliminar la receta.');
-        }
-    }
-}
 
 fetchRecipes();
