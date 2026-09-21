@@ -12,7 +12,6 @@ const modalBody = document.getElementById('modal-body');
 
 let recipes = [];
 
-// Mostrar/Ocultar formulario
 function toggleForm(show) {
     if (show) {
         formContainer.classList.add('active');
@@ -27,15 +26,16 @@ function toggleForm(show) {
 toggleFormBtn.addEventListener('click', () => toggleForm(true));
 cancelBtn.addEventListener('click', () => toggleForm(false));
 
-// Cargar recetas desde Google Sheets al abrir la web
+// Cargar recetas desde Google Sheets
 async function fetchRecipes() {
     try {
         const response = await fetch(API_URL);
+        if (!response.ok) throw new Error('Error al conectar con la API');
         recipes = await response.json();
         renderRecipes();
     } catch (error) {
-        console.error('Error al cargar las recetas:', error);
-        recipesGrid.innerHTML = `<div class="empty-state"><p>Error al conectar con la nube.</p></div>`;
+        console.error('Error:', error);
+        recipesGrid.innerHTML = `<div class="empty-state"><p>No se pudieron cargar las recetas desde la nube.</p></div>`;
     }
 }
 
@@ -53,26 +53,29 @@ recipeForm.addEventListener('submit', async (e) => {
     };
 
     try {
-        // Enviar a SheetDB
-        await fetch(API_URL, {
+        const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ data: [newRecipe] })
+            body: JSON.stringify(newRecipe) // Enviamos el objeto plano directamente
         });
+
+        if (!response.ok) {
+            const errData = await response.text();
+            throw new Error(errData);
+        }
 
         recipes.unshift(newRecipe);
         toggleForm(false);
         renderRecipes();
     } catch (error) {
-        alert('Error al guardar la receta en la nube.');
-        console.error(error);
+        alert('Error al guardar la receta. Revisa la consola para más detalles.');
+        console.error('Detalle del error:', error);
     }
 });
 
-// Renderizar tarjetas
 function renderRecipes() {
     recipesGrid.innerHTML = '';
 
@@ -104,7 +107,6 @@ function renderRecipes() {
     });
 }
 
-// Modal de detalle
 function openModal(recipe) {
     modalBody.innerHTML = `
         <img src="${recipe.image}" alt="${recipe.title}" class="modal-img" onerror="this.src='https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&q=80&w=600'">
@@ -133,7 +135,6 @@ recipeModal.addEventListener('click', (e) => {
     if (e.target === recipeModal) closeModal();
 });
 
-// Eliminar receta de Google Sheets
 async function deleteRecipe(id) {
     if (confirm('¿Estás seguro de que quieres eliminar esta receta?')) {
         try {
@@ -151,5 +152,4 @@ async function deleteRecipe(id) {
     }
 }
 
-// Inicializar cargando desde la nube
 fetchRecipes();
