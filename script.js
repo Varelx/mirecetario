@@ -1,5 +1,5 @@
 // PEGA AQUÍ TU URL DE SHEETDB
-const API_URL = 'https://sheetdb.io/api/v1/d1zt4e9rosgot';
+const API_URL = 'https://sheetdb.io/api/v1/TU_ID_DE_SHEETDB';
 
 const formContainer = document.getElementById('form-container');
 const toggleFormBtn = document.getElementById('toggle-form-btn');
@@ -28,29 +28,26 @@ cancelBtn.addEventListener('click', () => toggleForm(false));
 
 // Cargar recetas desde Google Sheets
 async function fetchRecipes() {
-    console.log("Cargando recetas...");
     try {
         const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Error al conectar con la API');
+        if (!response.ok) throw new Error('No se pudo conectar con SheetDB');
         recipes = await response.json();
-        console.log("Recetas cargadas:", recipes);
         renderRecipes();
     } catch (error) {
         console.error('Error al cargar:', error);
-        recipesGrid.innerHTML = `<div class="empty-state"><p>No se pudieron cargar las recetas desde la nube.</p></div>`;
+        recipesGrid.innerHTML = `<div class="empty-state"><p>Error al conectar con la nube.</p></div>`;
     }
 }
 
 // Guardar receta en Google Sheets
 recipeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    console.log("Formulario enviado, procesando...");
 
     const submitBtn = recipeForm.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Guardando en la nube...';
+    submitBtn.textContent = 'Guardando...';
     submitBtn.disabled = true;
-    
+
     const newRecipe = {
         id: String(Date.now()),
         title: document.getElementById('title').value,
@@ -61,28 +58,27 @@ recipeForm.addEventListener('submit', async (e) => {
     };
 
     try {
+        // SheetDB exige la propiedad 'data' envuelta en un array
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(newRecipe)
+            body: JSON.stringify({ data: [newRecipe] })
         });
 
-        console.log("Respuesta del servidor:", response.status);
-
         if (!response.ok) {
-            const errData = await response.text();
-            throw new Error(errData);
+            const errorText = await response.text();
+            throw new Error(errorText || 'Error desconocido en el servidor');
         }
 
         recipes.unshift(newRecipe);
         toggleForm(false);
         renderRecipes();
     } catch (error) {
-        alert('Error al guardar. Revisa la consola.');
-        console.error('Detalle del error:', error);
+        console.error('Detalle del error al guardar:', error);
+        alert('Hubo un error al guardar la receta. Revisa la consola.');
     } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
@@ -151,16 +147,18 @@ recipeModal.addEventListener('click', (e) => {
 async function deleteRecipe(id) {
     if (confirm('¿Estás seguro de que quieres eliminar esta receta?')) {
         try {
-            await fetch(`${API_URL}/id/${id}`, {
+            const response = await fetch(`${API_URL}/id/${id}`, {
                 method: 'DELETE'
             });
+
+            if (!response.ok) throw new Error('No se pudo eliminar');
 
             recipes = recipes.filter(r => r.id !== id);
             closeModal();
             renderRecipes();
         } catch (error) {
+            console.error('Error al eliminar:', error);
             alert('Error al eliminar la receta.');
-            console.error(error);
         }
     }
 }
